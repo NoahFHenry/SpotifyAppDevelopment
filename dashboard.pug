@@ -1,0 +1,19 @@
+extends layout.pug
+    
+block content
+    h1 Welcome, #{user.id}!
+    img(src = user.images[0].url, class = 'circular_image')
+    <p> Welcome to my research app. First, please fill out the Qualtrics survey embedded below.
+    <p>
+    iframe(src="https://york.qualtrics.com/jfe/form/SV_b49SRHLYp8u1OOW", height="800px", width="1000px")
+
+    table
+      each t in tracks 
+        tr 
+          - var artist_name = t.track.artists[0].name 
+          - var track_name = t.track.name
+          - var track_preview = t.track.preview_url
+
+        td: #{artist_name}
+        td: a(href='/recommendations?artist=' + artist_id + '&track=' +track_id) #{track_name}
+        td: a(href=track_preview) Preview
