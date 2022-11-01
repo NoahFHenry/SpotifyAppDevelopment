@@ -7,9 +7,9 @@ app.set("views", "./views");
 app.set("view engine", "pug");
 app.use(express.static("public"));
 
-const redirect_uri = "XXXXXXXXXXXXXXX";
-const client_id = "XXXXXXXXXXXXXXX";
-const client_secret = "XXXXXXXXXXXXXXX";
+const redirect_uri = "http://localhost:1410/callback";
+const client_id = "a00d0ce770ab47678e223d5c4a53d852";
+const client_secret = "95b72093c90645ebad5600427e3b77dc";
 global.access_token;
 
 app.get("/", function (req, res) {
