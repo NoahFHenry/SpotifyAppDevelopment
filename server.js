@@ -1,4 +1,4 @@
-import express from "express";
+import express, { request } from "express";
 import fetch from "node-fetch";
 
 const app = express();
@@ -20,7 +20,7 @@ app.get("/authorize", (req, res) => {
     var auth_query_parameters = new URLSearchParams({
 		response_type: "code",
 		client_id: client_id,
-		scope: "user-library-read",
+		scope: ["user-library-read", "user-top-read", "playlist-modify-public", "playlist-modify-private", "user-read-private"],
 		redirect_uri: redirect_uri,
     });
 
@@ -55,7 +55,7 @@ res.redirect("/dashboard")
 });
 
 async function getData(endpoint) {
-    const response = await fetch("https://api.spotify.com/v1" + endpoint, {
+    let response = await fetch("https://api.spotify.com/v1" + endpoint, {
         method: "get",
         headers: {
             Authorization: "Bearer " + global.access_token,
@@ -68,22 +68,45 @@ async function getData(endpoint) {
 
 app.get("/dashboard", async (req, res) => {
     const userInfo = await getData("/me");
-    const tracks = await getData("/me/tracks?limit=20");
-
+    const tracks = await getData("/me/tracks?limit=50");
     res.render("dashboard", { user: userInfo, tracks: tracks.items})
-});
+}); 
 
 app.get("/recommendations", async (req, res) => {
+    const track_id = req.query.track;
     const params = new URLSearchParams({
+        method: "get",
         market: "GB",
-        seed_genres: "indie",
+        seed_genres: [""],
+        seed_tracks: track_id,
+        target_instrumentalness: 0.255,
+        target_acousticness: 0.378,
+        target_energy: 0.550,
+        target_valence: 0.418,
     })
 
     const data = await getData('/recommendations?' + params);
     res.render("recommendation", { tracks: data.tracks});
 });
 
-
+app.post("/users", function (req, res) {
+    request.post(
+        'https://api.spotify.com/v1/users/' + userInfo + '/playlists',
+        {
+            headers: {
+                'Authorization': access_token,
+                "Content-Type": 'application/json'
+            },
+            json: {
+                name: 'Study playlist',
+                public: true,
+                collaborative: false,
+                description: 'Test. Generated at ' + Date.now(),
+            }
+        })
+        res.render("playlists")
+})
+// console.log(userInfo)
 let listener = app.listen(1410, function () {
 console.log(
  "The app is listening on http://localhost:" + listener.address().port
