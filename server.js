@@ -1,15 +1,17 @@
-import express, { request } from "express";
+import express, { json, request } from "express";
 import fetch from "node-fetch";
+import cookieParser from "cookie-parser"
 
 const app = express();
+app.use(cookieParser())
 
 app.set("views", "./views");
 app.set("view engine", "pug");
 app.use(express.static("public"));
 
-const redirect_uri = "XXX";
-const client_id = "XXX";
-const client_secret = "XXX";
+const redirect_uri = "http://localhost:1410/callback";
+const client_id = "a00d0ce770ab47678e223d5c4a53d852";
+const client_secret = "95b72093c90645ebad5600427e3b77dc";
 global.access_token;
 
 app.get("/", function (req, res) {
@@ -20,7 +22,7 @@ app.get("/authorize", (req, res) => {
     var auth_query_parameters = new URLSearchParams({
 		response_type: "code",
 		client_id: client_id,
-		scope: ["user-library-read", "user-top-read", "playlist-modify-public", "playlist-modify-private", "user-read-private"],
+		scope: ["user-library-read", "user-top-read", "playlist-modify-public", "user-read-private"],
 		redirect_uri: redirect_uri,
     });
 
@@ -55,7 +57,7 @@ res.redirect("/dashboard")
 });
 
 async function getData(endpoint) {
-    let response = await fetch("https://api.spotify.com/v1" + endpoint, {
+    const response = await fetch("https://api.spotify.com/v1" + endpoint, {
         method: "get",
         headers: {
             Authorization: "Bearer " + global.access_token,
@@ -68,13 +70,14 @@ async function getData(endpoint) {
 
 app.get("/dashboard", async (req, res) => {
     const userInfo = await getData("/me");
-    const tracks = await getData("/me/tracks?limit=50");
-    res.render("dashboard", { user: userInfo, tracks: tracks.items})
+    // console.log(userInfo);
+    const tracks = await getData("/me/tracks?limit=50&offset=0");
+    res.cookie("userId", userInfo.id).render("dashboard", { user: userInfo, tracks: tracks.items})
 }); 
 
 app.get("/recommendations", async (req, res) => {
     const track_id = req.query.track;
-    const params = new URLSearchParams({
+    let params = new URLSearchParams({
         method: "get",
         market: "GB",
         seed_genres: [""],
@@ -84,29 +87,36 @@ app.get("/recommendations", async (req, res) => {
         target_energy: 0.550,
         target_valence: 0.418,
     })
-
     const data = await getData('/recommendations?' + params);
     res.render("recommendation", { tracks: data.tracks});
 });
 
-app.post("/users", function (req, res) {
-    request.post(
-        'https://api.spotify.com/v1/users/' + userInfo + '/playlists',
-        {
-            headers: {
-                'Authorization': access_token,
-                "Content-Type": 'application/json'
-            },
-            json: {
-                name: 'Study playlist',
-                public: true,
-                collaborative: false,
-                description: 'Test. Generated at ' + Date.now(),
-            }
+app.use(express.json());
+app.use(express.urlencoded({ extended: false}));
+
+app.get("/users/", async function (req, res) {
+    console.log(req.body);
+    const userId = req.cookies.userId;
+    const response = await fetch('https://api.spotify.com/v1/users/' + userId + '/playlists', {
+        method: "post",
+        //body: body,
+        headers: {
+            Authorization: "Bearer " + global.access_token,
+            "Content-Type": 'application/json',
+        },
+        body: JSON.stringify({
+            name: "Yor-Sounds study playlist",
+            public: true,
+            collaborative: false,
+            description: 'This is a test!',
         })
-        res.render("playlists")
+    })
+    let data = await response.json()
+    console.log(data)
+    res.render("createplaylist", {userId}
+    )
 })
-// console.log(userInfo)
+
 let listener = app.listen(1410, function () {
 console.log(
  "The app is listening on http://localhost:" + listener.address().port
