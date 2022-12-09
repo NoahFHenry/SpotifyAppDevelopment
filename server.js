@@ -9,7 +9,7 @@ app.set("views", "./views");
 app.set("view engine", "pug");
 app.use(express.static("public"));
 
-const redirect_uri = "http://localhost:1410/callback";
+const redirect_uri = "http://localhost:0000/callback";
 const client_id = "XXX";
 const client_secret = "XXX";
 global.access_token;
@@ -117,7 +117,7 @@ app.get("/users/", async function (req, res) {
     )
 })
 
-let listener = app.listen(1410, function () {
+let listener = app.listen(0000, function () {
 console.log(
  "The app is listening on http://localhost:" + listener.address().port
    );
